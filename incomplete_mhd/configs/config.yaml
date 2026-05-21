@@ -1,0 +1,21 @@
+seed: 0
+keep_incomplete: False
+latent_dim: 64
+
+wandb_project: incomplete_MHD
+config_name: incomplete_mhd 
+project_path: /home/asenella/scratch/incomplete_mhd_expes_clean/
+
+defaults:
+  - datasets: incomplete
+  - trainer: base 
+  - model: mvtcae
+  - encoders: base
+  - decoders: base
+  - dcca_networks: base
+  - joint_encoder: base
+
+hydra:
+  run: 
+    dir: /home/asenella/scratch/incomplete_mhd_manuscript/${keep_incomplete}/${seed}/${hydra.runtime.choices.model}
+  

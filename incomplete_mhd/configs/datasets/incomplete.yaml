@@ -1,0 +1,16 @@
+train_set:
+  _target_: multivae.data.datasets.mhd.MHD 
+  datapath: /home/asenella/scratch/data/MHD
+  split: train 
+  modalities: ['audio', 'image', 'trajectory']
+  missing_probabilities:
+    image: [0.,0.,0.,0.,0.,0.,0.,0.,0.,0.]
+    audio: [0.1, 0.17777778, 0.25555556, 0.33333333, 0.41111111,0.48888889, 0.56666667, 0.64444444, 0.72222222, 0.8]
+    trajectory: [0.3, 0.31111111, 0.32222222, 0.33333333, 0.34444444,0.35555556, 0.36666667, 0.37777778, 0.38888889, 0.4]
+  keep_incomplete: ${keep_incomplete}
+
+test_set:
+  _target_: multivae.data.datasets.mhd.MHD 
+  datapath: /home/asenella/scratch/data/MHD
+  split: test 
+  modalities: ['audio', 'image', 'trajectory']

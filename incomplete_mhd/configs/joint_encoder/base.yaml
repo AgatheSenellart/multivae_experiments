@@ -1,0 +1,17 @@
+_target_: multivae.models.nn.default_architectures.MultipleHeadJointEncoder
+dict_encoders: 
+  image:
+    _target_: architectures.Encoder_Conv_VAE_MNIST
+    latent_dim: ${model.model_config.embedding_dcca_dim}
+
+  audio: 
+    _target_: architectures.SoundEncoder
+    output_dim: ${model.model_config.embedding_dcca_dim}
+
+  trajectory: 
+    _target_: architectures.TrajectoryEncoder
+    input_dim: 200
+    layer_sizes: [512,512,512]
+    output_dim: ${model.model_config.embedding_dcca_dim}
+
+latent_dim: ${latent_dim}

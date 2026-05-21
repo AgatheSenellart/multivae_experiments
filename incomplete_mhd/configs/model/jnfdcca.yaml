@@ -1,0 +1,19 @@
+_target_: multivae.models.jnf_dcca.JNFDcca
+dcca_networks: ??
+decoders: ??
+joint_encoder: ??
+model_config: 
+  _target_: multivae.models.jnf_dcca.JNFDccaConfig
+  beta: 0.5
+  uses_likelihood_rescaling: True
+  alpha: 0.1
+  warmup: 200
+  nb_epochs_dcca: 100
+  embedding_dcca_dim: 16
+
+  n_modalities: 3
+  latent_dim: ${latent_dim}
+  input_dims:
+    image: [3,28,28]
+    audio: [1,32,128]
+    trajectory: [200]

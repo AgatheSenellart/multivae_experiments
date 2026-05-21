@@ -1,0 +1,14 @@
+_target_: multivae.models.MoPoE
+encoders: ??
+decoders: ??
+model_config: 
+  _target_: multivae.models.MoPoEConfig
+  beta: 0.5
+  uses_likelihood_rescaling: True
+
+  n_modalities: 3
+  latent_dim: ${latent_dim}
+  input_dims:
+    image: [3,28,28]
+    audio: [1,32,128]
+    trajectory: [200]

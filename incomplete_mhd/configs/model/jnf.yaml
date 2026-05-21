@@ -1,0 +1,16 @@
+_target_: multivae.models.JNF
+encoders: ??
+decoders: ??
+model_config: 
+  _target_: multivae.models.JNFConfig
+  beta: 0.5
+  uses_likelihood_rescaling: True
+  alpha: 0.1
+  warmup: 200
+
+  n_modalities: 3
+  latent_dim: ${latent_dim}
+  input_dims:
+    image: [3,28,28]
+    audio: [1,32,128]
+    trajectory: [200]

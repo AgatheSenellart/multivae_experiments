@@ -1,0 +1,14 @@
+image:
+  _target_: architectures.wrapper_encoder_image
+  latent_dim: ${model.model_config.latent_dim}
+  private_dim: ${model.model_config.modalities_specific_dim}
+
+audio: 
+  _target_: architectures.wrapper_encoder_sound
+  latent_dim: ${model.model_config.latent_dim}
+  private_dim: ${model.model_config.modalities_specific_dim}
+
+trajectory: 
+  _target_: architectures.wrapper_encoder_traj
+  latent_dim: ${model.model_config.latent_dim}
+  private_dim: ${model.model_config.modalities_specific_dim}

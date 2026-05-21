@@ -1,0 +1,20 @@
+_target_: multivae.models.MMVAEPlus
+encoders: ??
+decoders: ??
+model_config: 
+  _target_: multivae.models.MMVAEPlusConfig
+  beta: 0.5
+  uses_likelihood_rescaling: True
+  K: 10
+  prior_and_posterior_dist: laplace_with_softmax
+  learn_modality_prior: True
+  learn_shared_prior: False
+  modalities_specific_dim: 32
+  reconstruction_option: joint_prior
+
+  n_modalities: 3
+  latent_dim: 32
+  input_dims:
+    image: [3,28,28]
+    audio: [1,32,128]
+    trajectory: [200]

@@ -1,0 +1,13 @@
+image:
+  _target_: architectures.Decoder_Conv_AE_MNIST
+  latent_dim: 64
+
+audio: 
+  _target_: architectures.SoundDecoder
+  input_dim: 64
+
+trajectory: 
+  _target_: architectures.TrajectoryDecoder
+  input_dim: 64
+  layer_sizes: [512,512,512]
+  output_dim: 200

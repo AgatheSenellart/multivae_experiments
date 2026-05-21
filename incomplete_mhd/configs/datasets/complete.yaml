@@ -1,0 +1,12 @@
+train_set:
+  _target_: multivae.data.datasets.mhd.MHD 
+  datapath: /home/asenella/scratch/data/MHD
+  split: train 
+  modalities: ['audio', 'image', 'trajectory']
+
+
+test_set:
+  _target_: multivae.data.datasets.mhd.MHD 
+  datapath: /home/asenella/scratch/data/MHD
+  split: test 
+  modalities: ['audio', 'image', 'trajectory']
