@@ -1,5 +1,4 @@
 from config2 import *
-
 from multivae.models import JNF, JNFConfig
 from multivae.trainers import TwoStepsTrainer, TwoStepsTrainerConfig
 
@@ -17,7 +16,7 @@ train_data = MMNISTDataset(
     split="train",
     missing_ratio=args.missing_ratio,
     keep_incomplete=args.keep_incomplete,
-    download=True
+    download=True,
 )
 
 test_data = MMNISTDataset(data_path=data_path, split="test", download=True)
@@ -39,7 +38,7 @@ trainer_config = TwoStepsTrainerConfig(
     seed=args.seed,
     output_dir=f"{output_path}/compare_on_mmnist/{config_name}/{model.model_name}/seed_{args.seed}/missing_ratio_{args.missing_ratio}/",
 )
-trainer_config.num_epochs = 600 # enough for this model to converge
+trainer_config.num_epochs = 600  # enough for this model to converge
 
 # Set up callbacks
 if use_wandb:

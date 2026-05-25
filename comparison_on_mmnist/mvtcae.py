@@ -1,5 +1,4 @@
 from config2 import *
-
 from multivae.models import MVTCAE, MVTCAEConfig
 
 parser = argparse.ArgumentParser()
@@ -16,7 +15,7 @@ train_data = MMNISTDataset(
     split="train",
     missing_ratio=args.missing_ratio,
     keep_incomplete=args.keep_incomplete,
-    download=True
+    download=True,
 )
 
 test_data = MMNISTDataset(data_path=data_path, split="test", download=True)

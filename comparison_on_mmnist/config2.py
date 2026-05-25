@@ -4,11 +4,9 @@ Store in this file all the shared variables for the comparison on mmnist.
 
 import argparse
 import json
+import os
 
 import torch
-from torch import nn
-from torch.utils.data import random_split
-
 from multivae.data.datasets.mmnist import MMNISTDataset
 from multivae.metrics import CoherenceEvaluator, CoherenceEvaluatorConfig
 from multivae.metrics.base import EvaluatorConfig
@@ -24,11 +22,12 @@ from multivae.trainers.base.callbacks import (
     TrainingCallback,
     WandbCallback,
 )
-import os
+from torch import nn
+from torch.utils.data import random_split
 
 # The path to download and store the data, classifiers and inception network for FID.
-data_path = './data'
-output_path = 'experiments/'
+data_path = "./data"
+output_path = "experiments/"
 use_wandb = False
 
 modalities = ["m0", "m1", "m2", "m3", "m4"]
@@ -114,7 +113,7 @@ class ClfImg(nn.Module):
         return h
 
 
-def load_mmnist_classifiers(data_path=os.path.join(data_path,'clf'), device="cuda"):
+def load_mmnist_classifiers(data_path=os.path.join(data_path, "clf"), device="cuda"):
     clfs = {}
     for i in range(5):
         fp = data_path + "/pretrained_img_to_digit_clf_m" + str(i)
@@ -144,8 +143,13 @@ def eval_model(model, output_dir, test_data, wandb_path):
         eval_config=config,
     ).eval()
 
-    config = FIDEvaluatorConfig(batch_size=512, wandb_path=wandb_path,
-                                inception_weights_path=os.path.join(data_path,'pt_inception-2015-12-05-6726825d.pth'))
+    config = FIDEvaluatorConfig(
+        batch_size=512,
+        wandb_path=wandb_path,
+        inception_weights_path=os.path.join(
+            data_path, "pt_inception-2015-12-05-6726825d.pth"
+        ),
+    )
 
     # Cross-modal FIDs
     FIDEvaluator(

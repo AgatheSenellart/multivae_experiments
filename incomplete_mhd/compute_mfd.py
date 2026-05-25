@@ -1,30 +1,28 @@
-from multivae.models import AutoModel
 import os
-from multivae.metrics import FIDEvaluator, FIDEvaluatorConfig
+from pathlib import Path
+
+import torch
 import wandb
 from multivae.data.datasets import MultimodalBaseDataset
-import torch
-from pythae.models import AutoModel as pythae_automodel
-from pathlib import Path
+from multivae.metrics import FIDEvaluator, FIDEvaluatorConfig
+from multivae.models import AutoModel
 from multivae.trainers.base.callbacks import load_wandb_path_from_folder
-
+from pythae.models import AutoModel as pythae_automodel
 
 
 def compute_mfd(model, wandb_path, path):
-    
+
     # import the training data by hand to filter it by label.
     data = dict()
 
     (
-                data['label'],
-                data['image'],
-                data['trajectory'],
-                data['audio'],
-                _traj_normalization,
-                _audio_normalization,
-            ) = torch.load('/home/asenella/scratch/data/MHD/mhd_test.pt')
-
-
+        data["label"],
+        data["image"],
+        data["trajectory"],
+        data["audio"],
+        _traj_normalization,
+        _audio_normalization,
+    ) = torch.load("/home/asenella/scratch/data/MHD/mhd_test.pt")
 
     def unstack_tensor(tensor, dim=0):
         tensor_lst = []
@@ -33,83 +31,85 @@ def compute_mfd(model, wandb_path, path):
         tensor_unstack = torch.cat(tensor_lst, dim=0)
         return tensor_unstack
 
-    _a_data = data['audio'].permute(1,2,3,0)
-    _a_data = unstack_tensor(_a_data,dim=0).unsqueeze(0)
-    data['audio'] = _a_data.permute(3,0, 2,1)
+    _a_data = data["audio"].permute(1, 2, 3, 0)
+    _a_data = unstack_tensor(_a_data, dim=0).unsqueeze(0)
+    data["audio"] = _a_data.permute(3, 0, 2, 1)
 
     for label in range(10):
-                    
+
         # get only the samples corresponding to the label
         dataset = MultimodalBaseDataset(
-            data = {m : data[m][data['label']==label] for m in ['audio', 'trajectory', 'image']}, 
-            labels=data['label'][data['label']==label]
+            data={
+                m: data[m][data["label"] == label]
+                for m in ["audio", "trajectory", "image"]
+            },
+            labels=data["label"][data["label"] == label],
         )
-        
-        
 
         # get the encoders
-        
+
         encoders = {
             m: pythae_automodel.load_from_folder(
-                    os.path.join(f'/home/asenella/scratch/mhd_unimodal_encoders/{m}/{label}',
-                        os.listdir(f'/home/asenella/scratch/mhd_unimodal_encoders/{m}/{label}')[0],
-                        'final_model')
-            ).encoder for m in ['audio', 'trajectory', 'image']
+                os.path.join(
+                    f"/home/asenella/scratch/mhd_unimodal_encoders/{m}/{label}",
+                    os.listdir(
+                        f"/home/asenella/scratch/mhd_unimodal_encoders/{m}/{label}"
+                    )[0],
+                    "final_model",
+                )
+            ).encoder
+            for m in ["audio", "trajectory", "image"]
         }
-        
+
         # Configure FID
 
-        fid_config = FIDEvaluatorConfig(
-            batch_size=128,
-            wandb_path=wandb_path
-            
-        )
-        
+        fid_config = FIDEvaluatorConfig(batch_size=128, wandb_path=wandb_path)
+
         fid_module = FIDEvaluator(
-            model = model,
+            model=model,
             test_dataset=dataset,
             output=path,
             eval_config=fid_config,
-            custom_encoders=encoders
+            custom_encoders=encoders,
         )
 
-        
         mfd = 0
-        
+
         for mod in encoders:
             for gen_mod in encoders:
                 if gen_mod != mod:
-                    mfd += fid_module.compute_fid_from_conditional_generation([mod], gen_mod)
-        
-        fid_module.metrics[f'MFD_label_{label}'] = mfd 
+                    mfd += fid_module.compute_fid_from_conditional_generation(
+                        [mod], gen_mod
+                    )
+
+        fid_module.metrics[f"MFD_label_{label}"] = mfd
         fid_module.log_to_wandb()
         fid_module.finish()
 
 
 if __name__ == "__main__":
 
-    for model_name in ['mmvae','mmvae_plus']:
+    for model_name in ["mmvae", "mmvae_plus"]:
         for seed in range(4):
-            
-            model_path = Path(f'/home/asenella/scratch/incomplete_mhd_manuscript/True/{seed}/{model_name}/dummy_output_dir')
-            list_models = list(model_path.glob('*/final_model'))
-            
-            
+
+            model_path = Path(
+                f"/home/asenella/scratch/incomplete_mhd_manuscript/True/{seed}/{model_name}/dummy_output_dir"
+            )
+            list_models = list(model_path.glob("*/final_model"))
+
             for path in list_models:
-                wandb_id = load_wandb_path_from_folder(path).split('/')[-1]
-                path_wandb = f'asenellart/incomplete_MHD_clean/{wandb_id}'
+                wandb_id = load_wandb_path_from_folder(path).split("/")[-1]
+                path_wandb = f"asenellart/incomplete_MHD_clean/{wandb_id}"
                 model = AutoModel.load_from_folder(path)
                 compute_mfd(model, path_wandb, None)
-                
-            
+
             # model = AutoModel.load_from_hf_hub(model_path, allow_pickle=True)
-            
-                
+
             # run = wandb.init(entity='multimodal_vaes',
             #                         project='validate_mhd_mfd',
             #                         config=model.model_config.to_dict(),
             #                         reinit=True
             #                         )
             # run.config.update(dict(incomplete = True))
-            
-                # compute_mfd(model, run.path, None)
+
+            # compute_mfd(model, run.path, None)

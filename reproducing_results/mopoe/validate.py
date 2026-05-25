@@ -2,10 +2,6 @@ import os
 
 import numpy as np
 import torch
-from torch import nn
-from torch.utils.data import DataLoader
-from tqdm import tqdm
-
 from multivae.data.datasets.mmnist import MMNISTDataset
 from multivae.metrics import (
     CoherenceEvaluator,
@@ -13,6 +9,9 @@ from multivae.metrics import (
     LikelihoodsEvaluatorConfig,
 )
 from multivae.models.auto_model import AutoConfig, AutoModel
+from torch import nn
+from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 
 class Flatten(torch.nn.Module):
@@ -69,7 +68,7 @@ test_set = MMNISTDataset(data_path="./data", split="test", download=True)
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 # Make sure you have the classifiers in the right path
-clfs = load_mmnist_classifiers(data_path = './data/clf', device=device)
+clfs = load_mmnist_classifiers(data_path="./data/clf", device=device)
 
 model = AutoModel.load_from_hf_hub(
     f"asenella/reproducing_mopoe_seed_0", allow_pickle=True
@@ -79,6 +78,6 @@ model = AutoModel.load_from_hf_hub(
 # model = AutoModel.load_from_folder("path_to_your_tra ined_model")
 
 model = model.to(device)
-model.device=device
+model.device = device
 
 coherences = CoherenceEvaluator(model, clfs, test_set, None).eval()

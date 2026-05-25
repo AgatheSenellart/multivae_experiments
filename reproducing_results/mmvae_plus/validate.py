@@ -3,12 +3,11 @@ import os
 import numpy as np
 import torch
 import torch.nn.functional as F
-from torch import nn
-
 from multivae.data.datasets.mmnist import MMNISTDataset
+from multivae.models import AutoModel
 from multivae.models.base.base_model import BaseDecoder, BaseEncoder, ModelOutput
 from multivae.trainers.base.callbacks import ProgressBarCallback, WandbCallback
-from multivae.models import AutoModel
+from torch import nn
 
 ######## Dataset #########
 
@@ -67,9 +66,8 @@ def load_mmnist_classifiers(data_path="/home/asenella/scratch/data/clf", device=
     return clfs
 
 
-
 # Give the path to your trained model
-model = AutoModel.load_from_folder('path_to_the_model_you_want_to_evaluate')
+model = AutoModel.load_from_folder("path_to_the_model_you_want_to_evaluate")
 
 
 config = CoherenceEvaluatorConfig(batch_size=128)
@@ -78,10 +76,12 @@ CoherenceEvaluator(
     model=model,
     test_dataset=test_data,
     classifiers=load_mmnist_classifiers(device=model.device),
-    output='./validate_mmvae_plus',
+    output="./validate_mmvae_plus",
     eval_config=config,
 ).eval()
 
 config = FIDEvaluatorConfig(batch_size=128, wandb_path=None)
 
-fid = FIDEvaluator(model, test_data, output='./validate_mmvae_plus', eval_config=config).eval()
+fid = FIDEvaluator(
+    model, test_data, output="./validate_mmvae_plus", eval_config=config
+).eval()

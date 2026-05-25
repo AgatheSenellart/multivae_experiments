@@ -1,22 +1,24 @@
-
 """
 Store in this file all the shared variables for the benchmark on mmnist.
 """
 
 import argparse
 import json
+
 import numpy as np
-
 import torch
-from torch import nn
-from torch.utils.data import random_split
-
 from multivae.data.datasets.mmnist import MMNISTDataset
-from multivae.metrics import CoherenceEvaluator, CoherenceEvaluatorConfig, Visualization, VisualizationConfig
+from multivae.metrics import (
+    CoherenceEvaluator,
+    CoherenceEvaluatorConfig,
+    Visualization,
+    VisualizationConfig,
+)
 from multivae.metrics.base import EvaluatorConfig
 from multivae.metrics.fids.fids import FIDEvaluator
 from multivae.metrics.fids.fids_config import FIDEvaluatorConfig
-from multivae.models import BaseMultiVAEConfig
+from multivae.models import BaseMultiVAEConfig, MMVAEPlus, MMVAEPlusConfig
+from multivae.models.base import BaseDecoder, BaseEncoder, ModelOutput
 from multivae.models.base.base_config import BaseAEConfig
 from multivae.models.nn.mmnist import DecoderConvMMNIST, EncoderConvMMNIST_adapted
 from multivae.trainers import BaseTrainerConfig
@@ -26,9 +28,8 @@ from multivae.trainers.base.callbacks import (
     TrainingCallback,
     WandbCallback,
 )
-from multivae.models import MMVAEPlus, MMVAEPlusConfig
-from multivae.models.base import BaseEncoder, BaseDecoder, ModelOutput
-
+from torch import nn
+from torch.utils.data import random_split
 
 modalities = ["m0", "m1", "m2", "m3", "m4"]
 
@@ -40,6 +41,7 @@ modalities = ["m0", "m1", "m2", "m3", "m4"]
 def actvn(x):
     out = torch.nn.functional.leaky_relu(x, 2e-1)
     return out
+
 
 class ResnetBlock(nn.Module):
     def __init__(self, fin, fout, fhidden=None, is_bias=True):
@@ -80,7 +82,6 @@ class ResnetBlock(nn.Module):
         return x_s
 
 
-
 class Enc(BaseEncoder):
     """Generate latent parameters for SVHN image data."""
 
@@ -92,7 +93,7 @@ class Enc(BaseEncoder):
         nf_max = self.nf_max = 1024  # nfilter_max
         size = 28
         self.multiple_latent = ndim_w > 0
-        
+
         # Submodules
         nlayers = int(np.log2(size / s0))
         self.nf0 = min(nf_max, nf * 2**nlayers)
@@ -125,28 +126,26 @@ class Enc(BaseEncoder):
         self.fc_lv_u = nn.Linear(self.nf0 * s0 * s0, ndim_u)
 
     def forward(self, x):
-        
+
         out_u = self.conv_img_u(x)
         out_u = self.resnet_u(out_u)
         out_u = out_u.view(out_u.size()[0], self.nf0 * self.s0 * self.s0)
         lv_u = self.fc_lv_u(out_u)
-        
+
         output = ModelOutput(
             embedding=self.fc_mu_u(out_u),
             log_covariance=lv_u,
         )
-        
+
         # batch_size = x.size(0)
-        if self.multiple_latent : 
+        if self.multiple_latent:
             out_w = self.conv_img_w(x)
             out_w = self.resnet_w(out_w)
             out_w = out_w.view(out_w.size()[0], self.nf0 * self.s0 * self.s0)
             lv_w = self.fc_lv_w(out_w)
 
-
-            output['style_embedding'] = self.fc_mu_w(out_w)
-            output['style_log_covariance'] = lv_w
-
+            output["style_embedding"] = self.fc_mu_w(out_w)
+            output["style_log_covariance"] = lv_w
 
         return output
 
@@ -195,9 +194,6 @@ class Dec(BaseDecoder):
         return ModelOutput(reconstruction=out)
 
 
-
-        
-    
 ####### Training #########
 
 parser = argparse.ArgumentParser()
@@ -214,7 +210,7 @@ train_data = MMNISTDataset(
     split="train",
     missing_ratio=args.missing_ratio,
     keep_incomplete=args.keep_incomplete,
-    download=True
+    download=True,
 )
 
 test_data = MMNISTDataset(data_path="./data", split="test", download=True)
@@ -230,16 +226,14 @@ model_config = MMVAEPlusConfig(
     input_dims={k: (3, 28, 28) for k in modalities},
     decoders_dist={k: "laplace" for k in modalities},
     decoder_dist_params={k: {"scale": 0.75} for k in modalities},
-
     K=1,
-    prior_and_posterior_dist='laplace_with_softmax',
+    prior_and_posterior_dist="laplace_with_softmax",
     learn_shared_prior=False,
     learn_modality_prior=True,
     beta=2.5,
     modalities_specific_dim=32,
     reconstruction_option="joint_prior",
 )
-
 
 
 encoders = {
@@ -267,7 +261,9 @@ trainer_config = BaseTrainerConfig(
     output_dir=f"compare_on_mmnist/{model.model_name}/seed_{args.seed}/missing_ratio_{args.missing_ratio}/K_{model.K}",
 )
 trainer_config.per_device_train_batch_size = 32
-trainer_config.num_epochs = 150 if model.K==1 else 50 # enough for this model to reach convergence
+trainer_config.num_epochs = (
+    150 if model.K == 1 else 50
+)  # enough for this model to reach convergence
 
 ##### Set up callbacks: Uncomment the following lines to use wandb
 callbacks = None
@@ -343,13 +339,12 @@ def load_mmnist_classifiers(data_path="./data/clf", device="cuda"):
     return clfs
 
 
-
-def eval_model(model, output_dir, train_data,test_data, wandb_path, seed):
+def eval_model(model, output_dir, train_data, test_data, wandb_path, seed):
     """
     In this function, define all the evaluation metrics
     you want to use
     """
-    
+
     # Coherence evaluator
     config = CoherenceEvaluatorConfig(batch_size=128, wandb_path=wandb_path)
     mod = CoherenceEvaluator(
@@ -362,21 +357,24 @@ def eval_model(model, output_dir, train_data,test_data, wandb_path, seed):
     mod.eval()
     mod.finish()
 
-    
     # Visualization
     if seed == 0:
-    # visualize some unconditional sample from prior
-        vis_config = VisualizationConfig(wandb_path = wandb_path,n_samples=8, n_data_cond=10)
+        # visualize some unconditional sample from prior
+        vis_config = VisualizationConfig(
+            wandb_path=wandb_path, n_samples=8, n_data_cond=10
+        )
 
-        vis_module = Visualization(model, test_data,eval_config=vis_config,output = output_dir)
+        vis_module = Visualization(
+            model, test_data, eval_config=vis_config, output=output_dir
+        )
         vis_module.eval()
 
         # And some conditional samples too
-        for i in range(2,5):
-            subset = modalities[1:1+i]
+        for i in range(2, 5):
+            subset = modalities[1 : 1 + i]
             vis_module.conditional_samples_subset(subset)
 
         vis_module.finish()
-        
-    
-eval_model(model, trainer.training_dir,train_data, test_data,args.seed)
+
+
+eval_model(model, trainer.training_dir, train_data, test_data, args.seed)

@@ -2,8 +2,6 @@ import argparse
 
 import torch
 import torch.nn.functional as F
-from torch import nn
-
 from multivae.data.datasets.mnist_labels import MnistLabels
 from multivae.metrics.likelihoods.likelihoods import LikelihoodsEvaluator
 from multivae.metrics.likelihoods.likelihoods_config import LikelihoodsEvaluatorConfig
@@ -16,6 +14,7 @@ from multivae.models.nn.default_architectures import (
 from multivae.trainers.base.base_trainer import BaseTrainer
 from multivae.trainers.base.base_trainer_config import BaseTrainerConfig
 from multivae.trainers.base.callbacks import ProgressBarCallback, WandbCallback
+from torch import nn
 
 ###############################################################
 ###### Encoders & Decoders
@@ -199,9 +198,7 @@ trainer.train()
 ###############################################################################
 ###### Validate #############
 
-ll_config = LikelihoodsEvaluatorConfig(
-    batch_size=128, K=1000, batch_size_k=500
-)
+ll_config = LikelihoodsEvaluatorConfig(batch_size=128, K=1000, batch_size_k=500)
 
 ll_module = LikelihoodsEvaluator(model, test_set, eval_config=ll_config)
 

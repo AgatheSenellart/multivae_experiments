@@ -2,15 +2,6 @@ import argparse
 
 import torch
 import torch.nn as nn
-from pythae.models.base.base_config import BaseAEConfig
-from pythae.models.base.base_model import (
-    BaseAEConfig,
-    BaseDecoder,
-    BaseEncoder,
-    ModelOutput,
-)
-from torch.utils.data import random_split
-
 from multivae.data.datasets.mmnist import MMNISTDataset
 from multivae.models import MVTCAE, MVTCAEConfig
 from multivae.trainers import BaseTrainer, BaseTrainerConfig
@@ -19,6 +10,14 @@ from multivae.trainers.base.callbacks import (
     TrainingCallback,
     WandbCallback,
 )
+from pythae.models.base.base_config import BaseAEConfig
+from pythae.models.base.base_model import (
+    BaseAEConfig,
+    BaseDecoder,
+    BaseEncoder,
+    ModelOutput,
+)
+from torch.utils.data import random_split
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--seed", default=8)
@@ -145,13 +144,13 @@ trainer_config = BaseTrainerConfig(
     per_device_train_batch_size=256,
     drop_last=True,
     seed=args.seed,
-    output_dir='./reproduce_mvtcae'
+    output_dir="./reproduce_mvtcae",
 )
 
 # Set up callbacks
 callbacks = None
 
-# Uncomment the lines below if you want to use wandb 
+# Uncomment the lines below if you want to use wandb
 # wandb_cb = WandbCallback()
 # wandb_cb.setup(trainer_config, model_config, project_name="reproducing_mvtcae")
 # callbacks = [TrainingCallback(), ProgressBarCallback(), wandb_cb]
@@ -165,7 +164,6 @@ trainer = BaseTrainer(
 trainer.train()
 
 
-
 ##################################################################
 ## Validate
 
@@ -173,13 +171,12 @@ import os
 
 import numpy as np
 import torch
-from torch import nn
-from torch.utils.data import DataLoader
-from tqdm import tqdm
-
 from multivae.data.datasets.mmnist import MMNISTDataset
 from multivae.metrics import CoherenceEvaluator, FIDEvaluator, FIDEvaluatorConfig
 from multivae.models.auto_model import AutoConfig, AutoModel
+from torch import nn
+from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 
 class Flatten(torch.nn.Module):

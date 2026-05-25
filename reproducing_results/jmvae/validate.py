@@ -13,7 +13,7 @@ test_set = MnistLabels(data_path="./", split="test", download=True)
 
 ll_config = LikelihoodsEvaluatorConfig(
     K=1000,
-    unified_implementation=False, # Use the paper version of the likelihood, computing only the images likelihood and not the joint
+    unified_implementation=False,  # Use the paper version of the likelihood, computing only the images likelihood and not the joint
 )
 
 ll_module = LikelihoodsEvaluator(model, test_set, eval_config=ll_config)

@@ -3,14 +3,13 @@ import os
 
 import numpy as np
 import torch
-from torch import nn
-from torch.utils.data import DataLoader
-from tqdm import tqdm
-
 from multivae.data.datasets.mmnist import MMNISTDataset
 from multivae.metrics import CoherenceEvaluator
 from multivae.metrics.fids.fids import FIDEvaluator
 from multivae.models.auto_model import AutoConfig, AutoModel
+from torch import nn
+from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--seed", default=8)
@@ -80,4 +79,4 @@ model = AutoModel.load_from_hf_hub(
 
 coherences = CoherenceEvaluator(model, clfs, test_set, None).eval()
 
-fids = FIDEvaluator(model,test_set).compute_all_conditional_fids(gen_mod='m0')
+fids = FIDEvaluator(model, test_set).compute_all_conditional_fids(gen_mod="m0")

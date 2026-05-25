@@ -1,8 +1,10 @@
-
 from math import prod
+
 import torch
+
 # Image
-from pythae.models.nn.benchmarks.mnist import Encoder_Conv_VAE_MNIST, BaseDecoder
+from pythae.models.nn.benchmarks.mnist import BaseDecoder, Encoder_Conv_VAE_MNIST
+
 
 class Decoder_Conv_AE_MNIST(BaseDecoder):
 
@@ -44,7 +46,7 @@ class Decoder_Conv_AE_MNIST(BaseDecoder):
         self.layers = layers
         self.depth = len(layers)
 
-    def forward(self, z: torch.Tensor, output_layer_levels= None):
+    def forward(self, z: torch.Tensor, output_layer_levels=None):
         """Forward method
 
         Args:
@@ -91,21 +93,25 @@ class Decoder_Conv_AE_MNIST(BaseDecoder):
 
             if i + 1 == self.depth:
                 if len(z.shape) > 2:
-                    output["reconstruction"] = out.reshape(*z.shape[:-1],*out.shape[1:])
+                    output["reconstruction"] = out.reshape(
+                        *z.shape[:-1], *out.shape[1:]
+                    )
                 else:
                     output["reconstruction"] = out
 
         return output
+
+
 # Sound
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from multivae.models.base import BaseEncoder, BaseDecoder, ModelOutput
+from multivae.models.base import BaseDecoder, BaseEncoder, ModelOutput
 
 FRAME_SIZE = 512
 CONTEXT_FRAMES = 32
-SPECTROGRAM_BINS = FRAME_SIZE//2 + 1
+SPECTROGRAM_BINS = FRAME_SIZE // 2 + 1
 
 
 class SoundEncoder(BaseEncoder):
@@ -116,36 +122,54 @@ class SoundEncoder(BaseEncoder):
         # Properties
         self.conv_layer_0 = nn.Sequential(
             # Conv Layer block 1
-            nn.Conv2d(in_channels=1, out_channels=128, kernel_size=(1, 128), stride=(1, 1), padding=0, bias=False),
+            nn.Conv2d(
+                in_channels=1,
+                out_channels=128,
+                kernel_size=(1, 128),
+                stride=(1, 1),
+                padding=0,
+                bias=False,
+            ),
             nn.BatchNorm2d(128),
-            nn.ReLU()
+            nn.ReLU(),
         )
 
         self.conv_layer_1 = nn.Sequential(
-            nn.Conv2d(in_channels=128, out_channels=128, kernel_size=(4, 1), stride=(2, 1), padding=(1, 0), bias=False),
+            nn.Conv2d(
+                in_channels=128,
+                out_channels=128,
+                kernel_size=(4, 1),
+                stride=(2, 1),
+                padding=(1, 0),
+                bias=False,
+            ),
             nn.BatchNorm2d(128),
-            nn.ReLU()
+            nn.ReLU(),
         )
 
         self.conv_layer_2 = nn.Sequential(
-            nn.Conv2d(in_channels=128, out_channels=256, kernel_size=(4, 1), stride=(2, 1), padding=(1, 0), bias=False),
+            nn.Conv2d(
+                in_channels=128,
+                out_channels=256,
+                kernel_size=(4, 1),
+                stride=(2, 1),
+                padding=(1, 0),
+                bias=False,
+            ),
             nn.BatchNorm2d(256),
-            nn.ReLU()
+            nn.ReLU(),
         )
 
         # Output layer of the network
         self.fc_mu = nn.Linear(2048, output_dim)
         self.fc_logvar = nn.Linear(2048, output_dim)
 
-
     def forward(self, x):
         x = self.conv_layer_0(x)
         x = self.conv_layer_1(x)
         x = self.conv_layer_2(x)
         h = x.view(x.size(0), -1)
-        return ModelOutput(
-            embedding = self.fc_mu(h),
-            log_covariance = self.fc_logvar(h))
+        return ModelOutput(embedding=self.fc_mu(h), log_covariance=self.fc_logvar(h))
 
 
 class SoundDecoder(BaseDecoder):
@@ -154,52 +178,68 @@ class SoundDecoder(BaseDecoder):
         self.latent_dim = input_dim
 
         self.upsampler = nn.Sequential(
-            nn.Linear(input_dim, 2048),
-            nn.BatchNorm1d(2048),
-            nn.ReLU()
+            nn.Linear(input_dim, 2048), nn.BatchNorm1d(2048), nn.ReLU()
         )
 
         self.hallucinate_0 = nn.Sequential(
-            nn.ConvTranspose2d(in_channels=256, out_channels=128, kernel_size=(4, 1), stride=(2, 1), padding=(1, 0), bias=False),
+            nn.ConvTranspose2d(
+                in_channels=256,
+                out_channels=128,
+                kernel_size=(4, 1),
+                stride=(2, 1),
+                padding=(1, 0),
+                bias=False,
+            ),
             nn.BatchNorm2d(128),
-            nn.ReLU()
+            nn.ReLU(),
         )
 
         self.hallucinate_1 = nn.Sequential(
-            nn.ConvTranspose2d(in_channels=128, out_channels=128, kernel_size=(4, 1), stride=(2, 1), padding=(1, 0), bias=False),
+            nn.ConvTranspose2d(
+                in_channels=128,
+                out_channels=128,
+                kernel_size=(4, 1),
+                stride=(2, 1),
+                padding=(1, 0),
+                bias=False,
+            ),
             nn.BatchNorm2d(128),
-            nn.ReLU()
+            nn.ReLU(),
         )
 
         self.hallucinate_2 = nn.Sequential(
-            nn.ConvTranspose2d(in_channels=128, out_channels=1, kernel_size=(1, 128), stride=(1, 1), padding=0, bias=False),
+            nn.ConvTranspose2d(
+                in_channels=128,
+                out_channels=1,
+                kernel_size=(1, 128),
+                stride=(1, 1),
+                padding=0,
+                bias=False,
+            ),
         )
 
-
     def forward(self, z):
-        
+
         batch_shape = z.shape[:-1]
-        z = z.reshape(prod(batch_shape),-1)
-        
+        z = z.reshape(prod(batch_shape), -1)
+
         z = self.upsampler(z)
         z = z.view(-1, 256, 8, 1)
         z = self.hallucinate_0(z)
         z = self.hallucinate_1(z)
         out = self.hallucinate_2(z)
-        
-        if len(batch_shape) >1:
-            out = out.reshape(*batch_shape, *out.shape[1:])
-        
-        return ModelOutput(reconstruction = F.sigmoid(out))
 
+        if len(batch_shape) > 1:
+            out = out.reshape(*batch_shape, *out.shape[1:])
+
+        return ModelOutput(reconstruction=F.sigmoid(out))
 
 
 class Swish(nn.Module):
     def forward(self, x):
         return x * F.sigmoid(x)
-    
-    
-    
+
+
 # Trajectory Encoder
 
 import torch
@@ -235,13 +275,12 @@ class TrajectoryEncoder(BaseEncoder):
         self.fc_logvar = nn.Linear(pre, output_dim)
 
         # Print information
-        print(f'Layers: {enc_layers}')
+        print(f"Layers: {enc_layers}")
         self.network = nn.Sequential(*enc_layers)
 
     def forward(self, x):
         h = self.network(x)
-        return ModelOutput(embedding = self.fc_mu(h),
-                           log_covariance= self.fc_logvar(h))
+        return ModelOutput(embedding=self.fc_mu(h), log_covariance=self.fc_logvar(h))
 
 
 class TrajectoryDecoder(BaseDecoder):
@@ -277,33 +316,34 @@ class TrajectoryDecoder(BaseDecoder):
         self.out_process = nn.Sigmoid()
 
         # Print information
-        print(f'Layers: {dec_layers}')
-
+        print(f"Layers: {dec_layers}")
 
     def forward(self, x):
-        
+
         batch_shape = x.shape[:-1]
-        
-        x = x.reshape(prod(batch_shape),-1)
-        
+
+        x = x.reshape(prod(batch_shape), -1)
+
         out = self.network(x)
-        
-        if len(batch_shape)>1:
-            out = out.reshape(*batch_shape,*out.shape[1:])
-        
-        return ModelOutput(reconstruction = self.out_process(out))
-    
 
+        if len(batch_shape) > 1:
+            out = out.reshape(*batch_shape, *out.shape[1:])
 
+        return ModelOutput(reconstruction=self.out_process(out))
 
 
 ##### Classifiers #####
 
+
 class Image_Classifier(nn.Module):
     def __init__(self):
         super(Image_Classifier, self).__init__()
-        self.cnn_1 = nn.Conv2d(in_channels=1, out_channels=16, kernel_size=5, stride=1, padding=0)
-        self.cnn_2 = nn.Conv2d(in_channels=16, out_channels=32, kernel_size=5, stride=1, padding=0)
+        self.cnn_1 = nn.Conv2d(
+            in_channels=1, out_channels=16, kernel_size=5, stride=1, padding=0
+        )
+        self.cnn_2 = nn.Conv2d(
+            in_channels=16, out_channels=32, kernel_size=5, stride=1, padding=0
+        )
         self.relu = nn.ReLU()
         self.maxpool = nn.MaxPool2d(2, 2)
         self.dropout = nn.Dropout(p=0.2)
@@ -331,35 +371,54 @@ class Image_Classifier(nn.Module):
         out = self.out(out)
 
         return out
-    
-    
+
+
 class Sound_Classifier(nn.Module):
     def __init__(self):
         super(Sound_Classifier, self).__init__()
 
         self.cnn = nn.Sequential(
-            nn.Conv2d(in_channels=1, out_channels=128, kernel_size=(1, 128), stride=(1, 1), padding=0, bias=False),
+            nn.Conv2d(
+                in_channels=1,
+                out_channels=128,
+                kernel_size=(1, 128),
+                stride=(1, 1),
+                padding=0,
+                bias=False,
+            ),
             nn.BatchNorm2d(128),
             nn.ReLU(),
-            nn.Conv2d(in_channels=128, out_channels=128, kernel_size=(4, 1), stride=(2, 1),
-                      padding=(1, 0), bias=False),
+            nn.Conv2d(
+                in_channels=128,
+                out_channels=128,
+                kernel_size=(4, 1),
+                stride=(2, 1),
+                padding=(1, 0),
+                bias=False,
+            ),
             nn.BatchNorm2d(128),
             nn.ReLU(),
-            nn.Conv2d(in_channels=128, out_channels=256, kernel_size=(4, 1), stride=(2, 1),
-                      padding=(1, 0), bias=False),
+            nn.Conv2d(
+                in_channels=128,
+                out_channels=256,
+                kernel_size=(4, 1),
+                stride=(2, 1),
+                padding=(1, 0),
+                bias=False,
+            ),
             nn.BatchNorm2d(256),
-            nn.ReLU())
+            nn.ReLU(),
+        )
 
-        self.fc = nn.Sequential(nn.Linear(2048, 128),
-                                nn.BatchNorm1d(128),
-                                nn.LeakyReLU(),
-                                nn.Linear(128, 64),
-                                nn.BatchNorm1d(64),
-                                nn.LeakyReLU(),
-                                nn.Linear(64, 10))
-
-
-
+        self.fc = nn.Sequential(
+            nn.Linear(2048, 128),
+            nn.BatchNorm1d(128),
+            nn.LeakyReLU(),
+            nn.Linear(128, 64),
+            nn.BatchNorm1d(64),
+            nn.LeakyReLU(),
+            nn.Linear(64, 10),
+        )
 
     def forward(self, x):
         h = self.cnn(x)
@@ -368,29 +427,29 @@ class Sound_Classifier(nn.Module):
         return out
 
 
-
 class Trajectory_Classifier(nn.Module):
     def __init__(self):
         super(Trajectory_Classifier, self).__init__()
 
-        self.network = nn.Sequential(nn.Linear(200, 512),
-                                  nn.BatchNorm1d(512),
-                                  nn.LeakyReLU(),
-                                  nn.Linear(512, 512),
-                                  nn.BatchNorm1d(512),
-                                  nn.LeakyReLU(),
-                                  nn.Linear(512, 128),
-                                  nn.BatchNorm1d(128),
-                                  nn.LeakyReLU())
+        self.network = nn.Sequential(
+            nn.Linear(200, 512),
+            nn.BatchNorm1d(512),
+            nn.LeakyReLU(),
+            nn.Linear(512, 512),
+            nn.BatchNorm1d(512),
+            nn.LeakyReLU(),
+            nn.Linear(512, 128),
+            nn.BatchNorm1d(128),
+            nn.LeakyReLU(),
+        )
         self.out = nn.Linear(128, 10)
-
 
     def forward(self, x):
         h = self.network(x)
         return self.out(h)
 
+
 class Encoder_Conv_VAE_MNIST(BaseEncoder):
-    
 
     def __init__(self, latent_dim):
         BaseEncoder.__init__(self)
@@ -431,9 +490,9 @@ class Encoder_Conv_VAE_MNIST(BaseEncoder):
         self.depth = len(layers)
 
         self.embedding = nn.Linear(1024, latent_dim)
-        self.log_var = nn.Linear(1024,latent_dim)
+        self.log_var = nn.Linear(1024, latent_dim)
 
-    def forward(self, x: torch.Tensor, output_layer_levels = None):
+    def forward(self, x: torch.Tensor, output_layer_levels=None):
         """Forward method
 
         Args:
@@ -481,45 +540,50 @@ class Encoder_Conv_VAE_MNIST(BaseEncoder):
         return output
 
 
-
 class wrapper_encoder_image(BaseEncoder):
-    
-    def __init__(self,latent_dim, private_dim):
+
+    def __init__(self, latent_dim, private_dim):
         super().__init__()
-        self.private = Encoder_Conv_VAE_MNIST(latent_dim = latent_dim)
-        self.modality_specific = Encoder_Conv_VAE_MNIST(latent_dim = private_dim)
-    
-    def forward(self,input):
+        self.private = Encoder_Conv_VAE_MNIST(latent_dim=latent_dim)
+        self.modality_specific = Encoder_Conv_VAE_MNIST(latent_dim=private_dim)
+
+    def forward(self, input):
         output = self.private(input)
         output_modality_specific = self.modality_specific(input)
-        output['style_embedding'] = output_modality_specific['embedding']
-        output['style_log_covariance'] = output_modality_specific['log_covariance']
+        output["style_embedding"] = output_modality_specific["embedding"]
+        output["style_log_covariance"] = output_modality_specific["log_covariance"]
         return output
-    
+
+
 class wrapper_encoder_sound(BaseEncoder):
-    
+
     def __init__(self, latent_dim, private_dim):
         super().__init__()
         self.private = SoundEncoder(latent_dim)
         self.modality_specific = SoundEncoder(private_dim)
-    
-    def forward(self,input):
+
+    def forward(self, input):
         output = self.private(input)
         output_modality_specific = self.modality_specific(input)
-        output['style_embedding'] = output_modality_specific['embedding']
-        output['style_log_covariance'] = output_modality_specific['log_covariance']
+        output["style_embedding"] = output_modality_specific["embedding"]
+        output["style_log_covariance"] = output_modality_specific["log_covariance"]
         return output
 
+
 class wrapper_encoder_traj(BaseEncoder):
-    
+
     def __init__(self, latent_dim, private_dim):
         super().__init__()
-        self.private = TrajectoryEncoder(200, layer_sizes=[512, 512, 512], output_dim=latent_dim)
-        self.modality_specific = TrajectoryEncoder(200, layer_sizes=[512, 512, 512], output_dim=private_dim)
-    
-    def forward(self,input):
+        self.private = TrajectoryEncoder(
+            200, layer_sizes=[512, 512, 512], output_dim=latent_dim
+        )
+        self.modality_specific = TrajectoryEncoder(
+            200, layer_sizes=[512, 512, 512], output_dim=private_dim
+        )
+
+    def forward(self, input):
         output = self.private(input)
         output_modality_specific = self.modality_specific(input)
-        output['style_embedding'] = output_modality_specific['embedding']
-        output['style_log_covariance'] = output_modality_specific['log_covariance']
+        output["style_embedding"] = output_modality_specific["embedding"]
+        output["style_log_covariance"] = output_modality_specific["log_covariance"]
         return output

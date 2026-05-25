@@ -1,5 +1,4 @@
 from config2 import *
-
 from multivae.models import MMVAE, MMVAEConfig
 
 parser = argparse.ArgumentParser()
@@ -15,7 +14,7 @@ train_data = MMNISTDataset(
     split="train",
     missing_ratio=args.missing_ratio,
     keep_incomplete=args.keep_incomplete,
-    download=True
+    download=True,
 )
 
 test_data = MMNISTDataset(data_path=data_path, split="test", download=True)
@@ -25,10 +24,10 @@ train_data, eval_data = random_split(
 )
 
 model_config = MMVAEConfig(
-    **base_config, 
-    K=10, 
+    **base_config,
+    K=10,
     prior_and_posterior_dist="laplace_with_softmax",
-    learn_prior="False"
+    learn_prior="False",
 )
 
 
@@ -40,7 +39,7 @@ trainer_config = BaseTrainerConfig(
     output_dir=f"{output_path}/compare_on_mmnist/{config_name}/{model.model_name}/seed_{args.seed}/missing_ratio_{args.missing_ratio}/",
 )
 trainer_config.per_device_train_batch_size = 32
-trainer_config.num_epochs = 100 # enough for this model to reach convergence
+trainer_config.num_epochs = 100  # enough for this model to reach convergence
 
 # Set up callbacks
 if use_wandb:

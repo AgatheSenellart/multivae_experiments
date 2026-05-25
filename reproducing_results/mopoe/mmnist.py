@@ -2,15 +2,6 @@ import argparse
 
 import torch
 import torch.nn as nn
-from pythae.models.base.base_config import BaseAEConfig
-from pythae.models.base.base_model import (
-    BaseAEConfig,
-    BaseDecoder,
-    BaseEncoder,
-    ModelOutput,
-)
-from torch.utils.data import random_split
-
 from multivae.data.datasets.mmnist import MMNISTDataset
 from multivae.metrics.coherences.coherences import CoherenceEvaluator
 from multivae.models import MoPoE, MoPoEConfig
@@ -20,6 +11,14 @@ from multivae.trainers.base.callbacks import (
     TrainingCallback,
     WandbCallback,
 )
+from pythae.models.base.base_config import BaseAEConfig
+from pythae.models.base.base_model import (
+    BaseAEConfig,
+    BaseDecoder,
+    BaseEncoder,
+    ModelOutput,
+)
+from torch.utils.data import random_split
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--seed", default=8)
@@ -177,10 +176,6 @@ import os
 
 import numpy as np
 import torch
-from torch import nn
-from torch.utils.data import DataLoader
-from tqdm import tqdm
-
 from multivae.data.datasets.mmnist import MMNISTDataset
 from multivae.metrics import (
     CoherenceEvaluator,
@@ -188,6 +183,9 @@ from multivae.metrics import (
     LikelihoodsEvaluatorConfig,
 )
 from multivae.models.auto_model import AutoConfig, AutoModel
+from torch import nn
+from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 
 class Flatten(torch.nn.Module):
@@ -239,16 +237,14 @@ def load_mmnist_classifiers(data_path="./data/clf", device="cuda"):
 
 ##############################################################################
 
-test_set = MMNISTDataset(data_path="./data", split="test", download = True)
+test_set = MMNISTDataset(data_path="./data", split="test", download=True)
 
 data_path = trainer.training_dir
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 # Make sure you have the classifiers in the right path
-clfs = load_mmnist_classifiers(data_path = './data',device=device)
+clfs = load_mmnist_classifiers(data_path="./data", device=device)
 model = trainer._best_model
 
 coherences = CoherenceEvaluator(model, clfs, test_set, data_path).eval()
-
-
